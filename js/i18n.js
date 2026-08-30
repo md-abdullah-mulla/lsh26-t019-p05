@@ -159,6 +159,7 @@ export const I18N = {
     loginBad: "পিন মিলেনি। নমুনা পিন 2026।",
     logout: "বের হোন",
     loggedInAs: "কর্মী",
+    serverDown: "সার্ভার চলছে না। খাতা খোলা যাচ্ছে না।",
   },
   en: {
     brand: "Kisti Khata",
@@ -313,6 +314,7 @@ export const I18N = {
     loginBad: "PIN did not match. Sample PIN is 2026.",
     logout: "Log out",
     loggedInAs: "Officer",
+    serverDown: "The server is not running. The book cannot open.",
   },
 };
 

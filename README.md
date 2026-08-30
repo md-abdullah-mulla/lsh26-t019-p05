@@ -10,7 +10,14 @@ A village-center collection book. Payments are uneven. The ledger applies each p
 
 ## Setup and run
 
-No build step. No backend.
+Node backend (no extra npm packages). Login, payments and the book are stored on the server (`data/book.json` locally, `/tmp` on Vercel).
+
+```bash
+npm start
+# http://127.0.0.1:8080
+```
+
+API: `POST /api/login`, `GET /api/state`, `POST /api/pay`, `DELETE /api/pay`, `POST /api/borrowers`, `POST /api/reset`, `POST /api/logout`.
 
 The first screen is the **center login**. Sample officer access (shown on the page):
 

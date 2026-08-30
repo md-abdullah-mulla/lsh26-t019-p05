@@ -6,7 +6,7 @@ The application source in this repository is original work of the team unless li
 
 ## Runtime
 
-No npm package is loaded in the browser. The app is static HTML, CSS and ES modules.
+No npm package is loaded in the browser or on the server. HTML/CSS/ES modules plus a Node `http` API (`server.mjs`, `api/`).
 
 | Item | Use | Licence / source |
 |---|---|---|

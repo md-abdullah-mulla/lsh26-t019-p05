@@ -16,6 +16,7 @@ import {
   meetingClose,
   checkOfficerLogin,
 } from "./actions.js";
+import { api } from "./api.js";
 
 selfTest();
 
@@ -26,18 +27,21 @@ const NOTES = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500, 100, 50, 25];
 const FIXTURE_REMOTE = "https://live.hackathon.lofistack.com/api/fixtures/P05?teamId=LSH26-T019";
 const FIXTURE_LOCAL = "./data/P05_micro_loans_public.json";
 
-function load() {
+function loadLang() {
   try {
-    const s = JSON.parse(localStorage.getItem(STORE));
-    if (s && Array.isArray(s.borrowers) && s.borrowers.length) {
-      if (s.lang !== "bn" && s.lang !== "en") s.lang = "bn";
-      return s;
-    }
+    const s = localStorage.getItem("kisti-lang");
+    if (s === "en" || s === "bn") return s;
   } catch {}
-  return { asOf: TODAY_REAL, borrowers: structuredClone(SEED.borrowers), group: "Shapla", lang: "bn", officer: null };
+  return "bn";
 }
 
-let state = load();
+let state = {
+  asOf: TODAY_REAL,
+  borrowers: [],
+  group: "Shapla",
+  lang: loadLang(),
+  officer: null,
+};
 let view = {
   page: "meeting",
   memberId: null,
@@ -125,20 +129,21 @@ function bindLogin() {
   document.querySelectorAll("[data-lang]").forEach((el) => {
     el.addEventListener("click", () => { state.lang = el.dataset.lang; save(); render(); });
   });
-  document.getElementById("login-form")?.addEventListener("submit", (e) => {
+  document.getElementById("login-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const name = document.getElementById("login-name")?.value || "";
     const pin = document.getElementById("login-pin")?.value || "";
-    const v = checkOfficerLogin(name, pin);
-    if (!v.ok) {
-      const box = document.getElementById("login-err");
-      if (box) { box.hidden = false; box.textContent = t(v.code); }
-      return;
+    const box = document.getElementById("login-err");
+    try {
+      applyBook(await api("/login", { method: "POST", body: { name, pin } }));
+      view.page = "meeting";
+      render();
+    } catch (err) {
+      if (box) {
+        box.hidden = false;
+        box.textContent = t(err.code === "unauthorized" || err.code === "api" ? "serverDown" : (err.code || "loginBad"));
+      }
     }
-    state.officer = v.officer;
-    save();
-    view.page = "meeting";
-    render();
   });
   document.getElementById("login-name")?.focus();
 }
@@ -630,14 +635,27 @@ function goNextMember() {
 }
 
 function bind() {
-  document.getElementById("asof")?.addEventListener("change", (e) => {
-    state.asOf = e.target.value; save(); render();
+  document.getElementById("asof")?.addEventListener("change", async (e) => {
+    try { applyBook(await api("/state", { method: "PATCH", body: { asOf: e.target.value } })); }
+    catch { state.asOf = e.target.value; }
+    render();
   });
   document.querySelectorAll("[data-asof]").forEach((el) => {
-    el.addEventListener("click", () => { state.asOf = el.dataset.asof; save(); render(); });
+    el.addEventListener("click", async () => {
+      try { applyBook(await api("/state", { method: "PATCH", body: { asOf: el.dataset.asof } })); }
+      catch { state.asOf = el.dataset.asof; }
+      render();
+    });
   });
   document.querySelectorAll("[data-lang]").forEach((el) => {
-    el.addEventListener("click", () => { state.lang = el.dataset.lang; save(); render(); });
+    el.addEventListener("click", async () => {
+      state.lang = el.dataset.lang;
+      saveLang();
+      if (state.officer) {
+        try { applyBook(await api("/state", { method: "PATCH", body: { lang: state.lang } })); } catch {}
+      }
+      render();
+    });
   });
   document.querySelectorAll("[data-nav]").forEach((el) => {
     el.addEventListener("click", () => {
@@ -649,10 +667,12 @@ function bind() {
     });
   });
   document.querySelectorAll("[data-group]").forEach((el) => {
-    el.addEventListener("click", () => {
-      state.group = el.dataset.group || null;
+    el.addEventListener("click", async () => {
+      const group = el.dataset.group || null;
       view.memberId = null; view.amountStr = ""; view.formError = null;
-      save(); render();
+      try { applyBook(await api("/state", { method: "PATCH", body: { group } })); }
+      catch { state.group = group; }
+      render();
     });
   });
   document.querySelectorAll("[data-open]").forEach((el) => {
@@ -666,15 +686,21 @@ function bind() {
       view.memberId = el.dataset.select; view.amountStr = ""; view.formError = null; render();
     });
   });
-  document.getElementById("reset")?.addEventListener("click", () => {
+  document.getElementById("reset")?.addEventListener("click", async () => {
     if (!confirm(t("resetConfirm"))) return;
-    state = { asOf: TODAY_REAL, borrowers: structuredClone(SEED.borrowers), group: "Shapla", lang: state.lang, officer: state.officer };
-    view = { ...view, session: [], amountStr: "", memberId: null, page: "meeting", receipt: null, formError: null, caseId: SEED.case_id || "PUB-01", sheetDate: null };
-    save(); toast(t("restored")); render();
+    try {
+      applyBook(await api("/reset", { method: "POST", body: {} }));
+      view = { ...view, session: [], amountStr: "", memberId: null, page: "meeting", receipt: null, formError: null, caseId: SEED.case_id || "PUB-01", sheetDate: null };
+      toast(t("restored"));
+    } catch {
+      toast(t("serverDown"));
+    }
+    render();
   });
-  document.getElementById("logout")?.addEventListener("click", () => {
+  document.getElementById("logout")?.addEventListener("click", async () => {
+    try { await api("/logout", { method: "POST", body: {} }); } catch {}
     state.officer = null;
-    save();
+    state.borrowers = [];
     render();
   });
   document.getElementById("demo")?.addEventListener("click", playDemo);
@@ -761,22 +787,20 @@ function bind() {
     doPost();
   });
   document.querySelectorAll("[data-del-pay]").forEach((el) => {
-    el.addEventListener("click", () => {
+    el.addEventListener("click", async () => {
       if (!confirm(t("confirmRemove"))) return;
-      const b = find(view.memberId);
       try {
-        removePayment(b, Number(el.dataset.delPay));
-        save();
+        applyBook(await api("/pay", { method: "DELETE", body: { id: view.memberId, seq: Number(el.dataset.delPay) } }));
         render();
       } catch {
         showPayError(t("confirmRemove"));
       }
     });
   });
-  document.getElementById("new-form")?.addEventListener("submit", (e) => {
+  document.getElementById("new-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const v = validateNewBorrower({
+    const body = {
       name: fd.get("name"),
       group: fd.get("group"),
       loan: fd.get("loan"),
@@ -784,21 +808,25 @@ function bind() {
       weeks: fd.get("weeks"),
       instalment: fd.get("instalment"),
       first_due: fd.get("first_due"),
-    });
+    };
+    const v = validateNewBorrower(body);
     if (!v.ok) {
       const msg = t(v.code === "bad_date" ? "alertDate" : v.code === "bad_amount" ? "alertAmount" : v.code);
       const box = document.getElementById("new-err");
       if (box) { box.hidden = false; box.textContent = msg; }
       return;
     }
-    const rec = { ...v.record, id: makeId(state.borrowers) };
-    snapshot(rec, state.asOf);
-    state.borrowers.push(rec);
-    save();
-    view.modal = null;
-    view.page = "member";
-    view.memberId = rec.id;
-    render();
+    try {
+      const out = await api("/borrowers", { method: "POST", body });
+      applyBook(out);
+      view.modal = null;
+      view.page = "member";
+      view.memberId = out.createdId;
+      render();
+    } catch (err) {
+      const box = document.getElementById("new-err");
+      if (box) { box.hidden = false; box.textContent = t(err.code || "serverDown"); }
+    }
   });
 }
 
@@ -1039,4 +1067,7 @@ window.addEventListener("keydown", (e) => {
 
 export const __test = { I18N, t, stateRef: () => state };
 
-render();
+(async function boot() {
+  await pullState();
+  render();
+})();

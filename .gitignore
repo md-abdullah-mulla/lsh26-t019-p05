@@ -8,4 +8,5 @@ node_modules
 *.token
 .gh-token
 .git-credentials
+data/book.json
 
