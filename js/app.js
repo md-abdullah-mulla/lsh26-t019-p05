@@ -97,7 +97,6 @@ function toast(msg) {
   render();
   setTimeout(() => { if (view.toast === msg) { view.toast = null; render(); } }, 2500);
 }
-function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 function dash() { return dashboard(state.borrowers, state.asOf, state.group); }
 function sheetDate() { return view.sheetDate || state.asOf; }
 function groupsInBook() {
@@ -730,7 +729,6 @@ function bind() {
     state.borrowers = [];
     render();
   });
-  document.getElementById("demo")?.addEventListener("click", playDemo);
   document.getElementById("new-b")?.addEventListener("click", () => { view.modal = "borrower"; render(); });
   document.getElementById("cancel-modal")?.addEventListener("click", () => { view.modal = null; render(); });
   document.getElementById("modal")?.addEventListener("click", (e) => {
@@ -1048,34 +1046,6 @@ function printClosing() {
     <table><tbody>${still || `<tr><td>${esc(t("noneOverdue"))}</td></tr>`}</tbody></table>`);
 }
 
-async function playDemo() {
-  try {
-    applyBook(await api("/state", { method: "PATCH", body: { asOf: CASE_TODAY, group: "Shapla" } }));
-  } catch {
-    state.asOf = CASE_TODAY;
-    state.group = "Shapla";
-  }
-  view.page = "meeting";
-  view.memberId = "B13";
-  view.amountStr = "";
-  view.receipt = null;
-  view.formError = null;
-  render();
-  toast(t("demoStart"));
-  await sleep(900);
-  const b = find("B13");
-  if (!b) return;
-  const s = snapshot(b, state.asOf);
-  view.amountStr = fromPaisa(s.overduePaisa);
-  view.payDate = state.asOf;
-  paintLive();
-  const amt = document.getElementById("pay-amt");
-  if (amt) amt.value = view.amountStr;
-  toast(t("demoFill"));
-  await sleep(1400);
-  doPost();
-}
-
 window.addEventListener("keydown", (e) => {
   if (!state.officer) return;
   if (e.key === "Escape") {
@@ -1092,7 +1062,6 @@ window.addEventListener("keydown", (e) => {
     return;
   }
   if (e.target.matches?.("input, textarea, select")) return;
-  if (e.key === "d" || e.key === "D") playDemo();
   if (e.key === "n" || e.key === "N") {
     e.preventDefault();
     goNextMember();
