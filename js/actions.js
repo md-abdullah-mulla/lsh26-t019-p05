@@ -170,4 +170,13 @@ export function meetingClose(session, snaps) {
   return { paid, taken, still, nPosts: (session || []).length };
 }
 
+export const OFFICE_PIN = "2026";
+
+export function checkOfficerLogin(name, pin) {
+  const n = String(name || "").trim();
+  if (!n) return { ok: false, code: "nameRequired" };
+  if (String(pin ?? "").trim() !== OFFICE_PIN) return { ok: false, code: "loginBad" };
+  return { ok: true, officer: n };
+}
+
 export { snapshot, dashboard, previewAllocation };

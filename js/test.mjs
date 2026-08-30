@@ -19,6 +19,8 @@ import {
   nextOverdue,
   parseFixturePayload,
   meetingClose,
+  checkOfficerLogin,
+  OFFICE_PIN,
 } from "./actions.js";
 
 function loadPublicCases() {
@@ -367,6 +369,14 @@ tc("TC-A13", "Likely finish uses actual pay rate; close-meeting totals session",
   eq(closed.paid.length, 1, "grouped");
   eq(closed.nPosts, 2, "posts");
   assert(closed.still.every((s) => s.overduePaisa > 0), "still overdue only");
+});
+
+tc("TC-A14", "Officer login requires name and the office PIN", () => {
+  eq(checkOfficerLogin("", OFFICE_PIN).ok, false, "no name");
+  eq(checkOfficerLogin("Mina", "0000").ok, false, "bad pin");
+  eq(checkOfficerLogin("Mina", OFFICE_PIN).ok, true, "ok");
+  eq(checkOfficerLogin("Mina", OFFICE_PIN).officer, "Mina", "name kept");
+  eq(checkOfficerLogin("  Mina  ", "2026").officer, "Mina", "trim");
 });
 
 // ——— TC-I i18n ———

@@ -14,6 +14,7 @@ import {
   nextOverdue,
   parseFixturePayload,
   meetingClose,
+  checkOfficerLogin,
 } from "./actions.js";
 
 selfTest();
@@ -33,7 +34,7 @@ function load() {
       return s;
     }
   } catch {}
-  return { asOf: TODAY_REAL, borrowers: structuredClone(SEED.borrowers), group: "Shapla", lang: "bn" };
+  return { asOf: TODAY_REAL, borrowers: structuredClone(SEED.borrowers), group: "Shapla", lang: "bn", officer: null };
 }
 
 let state = load();
@@ -62,7 +63,7 @@ function fds(iso) { return formatDateShort(iso, state.lang); }
 function find(id) { return state.borrowers.find((b) => b.id === id); }
 function save() {
   localStorage.setItem(STORE, JSON.stringify({
-    asOf: state.asOf, borrowers: state.borrowers, group: state.group, lang: state.lang,
+    asOf: state.asOf, borrowers: state.borrowers, group: state.group, lang: state.lang, officer: state.officer || null,
   }));
 }
 function esc(s) {
@@ -96,10 +97,61 @@ function showPayError(msg) {
   }
 }
 
+function loginHtml() {
+  return `
+    <div class="login-wrap">
+      <form class="box login-card form" id="login-form">
+        <div class="brand">${esc(t("brand"))}</div>
+        <p class="place">${esc(t("place"))}</p>
+        <h1>${esc(t("loginTitle"))}</h1>
+        <p class="help">${esc(t("loginSub"))}</p>
+        <div class="lang">
+          <button type="button" data-lang="bn" class="${state.lang === "bn" ? "on" : ""}">${esc(t("langBn"))}</button>
+          <button type="button" data-lang="en" class="${state.lang === "en" ? "on" : ""}">${esc(t("langEn"))}</button>
+        </div>
+        <label>${esc(t("loginName"))}</label>
+        <input id="login-name" name="officer" autocomplete="username" required />
+        <label>${esc(t("loginPin"))}</label>
+        <input id="login-pin" name="pin" type="password" inputmode="numeric" autocomplete="current-password" required />
+        <div class="errbox" id="login-err" hidden></div>
+        <p class="help">${esc(t("loginHelp"))}</p>
+        <button class="btn primary" type="submit">${esc(t("loginGo"))}</button>
+      </form>
+    </div>
+  `;
+}
+
+function bindLogin() {
+  document.querySelectorAll("[data-lang]").forEach((el) => {
+    el.addEventListener("click", () => { state.lang = el.dataset.lang; save(); render(); });
+  });
+  document.getElementById("login-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = document.getElementById("login-name")?.value || "";
+    const pin = document.getElementById("login-pin")?.value || "";
+    const v = checkOfficerLogin(name, pin);
+    if (!v.ok) {
+      const box = document.getElementById("login-err");
+      if (box) { box.hidden = false; box.textContent = t(v.code); }
+      return;
+    }
+    state.officer = v.officer;
+    save();
+    view.page = "meeting";
+    render();
+  });
+  document.getElementById("login-name")?.focus();
+}
+
 function render() {
   document.documentElement.lang = state.lang === "bn" ? "bn" : "en";
-  const d = dash();
   const root = document.getElementById("app");
+  if (!state.officer) {
+    root.innerHTML = loginHtml();
+    bindLogin();
+    return;
+  }
+  const d = dash();
   root.innerHTML = `
     <header class="top">
       <div class="brand">${esc(t("brand"))}</div>
@@ -121,6 +173,8 @@ function render() {
           <button type="button" data-lang="bn" class="${state.lang === "bn" ? "on" : ""}">${esc(t("langBn"))}</button>
           <button type="button" data-lang="en" class="${state.lang === "en" ? "on" : ""}">${esc(t("langEn"))}</button>
         </div>
+        <span class="officer-chip" title="${esc(t("loggedInAs"))}">${esc(t("loggedInAs"))}: ${esc(state.officer)}</span>
+        <button type="button" id="logout">${esc(t("logout"))}</button>
       </div>
     </header>
     <div class="subbar">
@@ -624,9 +678,14 @@ function bind() {
   });
   document.getElementById("reset")?.addEventListener("click", () => {
     if (!confirm(t("resetConfirm"))) return;
-    state = { asOf: TODAY_REAL, borrowers: structuredClone(SEED.borrowers), group: "Shapla", lang: state.lang };
+    state = { asOf: TODAY_REAL, borrowers: structuredClone(SEED.borrowers), group: "Shapla", lang: state.lang, officer: state.officer };
     view = { ...view, session: [], amountStr: "", memberId: null, page: "meeting", receipt: null, formError: null, caseId: SEED.case_id || "PUB-01", sheetDate: null };
     save(); toast(t("restored")); render();
+  });
+  document.getElementById("logout")?.addEventListener("click", () => {
+    state.officer = null;
+    save();
+    render();
   });
   document.getElementById("demo")?.addEventListener("click", playDemo);
   document.getElementById("new-b")?.addEventListener("click", () => { view.modal = "borrower"; render(); });

@@ -315,6 +315,47 @@ input[type="range"] { width: 100%; accent-color: var(--teal); }
   .meet .box:first-child { max-height: none; }
 }
 
+.login-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background:
+    radial-gradient(900px 320px at 10% 0%, #cfeee3 0%, transparent 55%),
+    var(--bg);
+}
+.login-card {
+  width: min(420px, 100%);
+  padding: 28px 26px 24px;
+  border-radius: 16px;
+}
+.login-card .brand {
+  color: var(--teal);
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+.login-card .brand::before {
+  box-shadow: inset 0 0 0 6px var(--teal);
+  background: var(--teal-soft);
+}
+.login-card h1 {
+  margin: 12px 0 4px;
+  font-size: 22px;
+  font-weight: 800;
+}
+.login-card .place { color: var(--muted); margin: 0 0 8px; }
+.login-card .lang { background: var(--teal-soft); margin: 10px 0 14px; }
+.login-card .lang button { color: var(--teal); }
+.login-card .lang button.on { background: var(--teal); color: #fff; }
+.officer-chip {
+  font-size: 12px;
+  color: #d7efe6;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media print {
   .top, .subbar, .nav, .tools, .toast, .modal-bg, .no-print, .pad, .quick, .btn { display: none !important; }
   body { background: #fff; }

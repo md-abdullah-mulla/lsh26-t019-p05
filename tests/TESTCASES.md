@@ -57,3 +57,4 @@ Run: `npm test`
 | UI-12 | Enter posts, N next member, Esc closes | No alert() for amount errors |
 | UI-13 | Bad amount on post | Red on-page error under the field |
 | UI-14 | Sample cases / Open JSON | Loads official pack; case picker appears |
+| UI-15 | Login: empty name / wrong PIN / PIN 2026 | On-page error; then the meeting book opens; Log out returns to login |

@@ -12,6 +12,11 @@ A village-center collection book. Payments are uneven. The ledger applies each p
 
 No build step. No backend.
 
+The first screen is the **center login**. Sample officer access (shown on the page):
+
+- Name: any (e.g. `Mina`)
+- PIN: `2026`
+
 ```bash
 # from this directory
 python3 -m http.server 8080 --bind 0.0.0.0
