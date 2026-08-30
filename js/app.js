@@ -20,7 +20,6 @@ import { api } from "./api.js";
 
 selfTest();
 
-const STORE = "kisti-khata-v3";
 const TODAY_REAL = "2026-08-30";
 const CASE_TODAY = SEED.today;
 const NOTES = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500, 100, 50, 25];
@@ -542,6 +541,16 @@ function aboutHtml(d) {
       <p>3. ${esc(t("about3"))}</p>
       <p>${esc(t("fixtureHelp"))}</p>
     </div>
+    <div class="sheet-actions no-print" style="margin:14px 0">
+      <button type="button" class="btn" id="load-official">${esc(t("loadOfficial"))}</button>
+      <button type="button" class="btn" id="load-local">${esc(t("loadLocal"))}</button>
+      <button type="button" class="btn" id="upload-json">${esc(t("fileBtn"))}</button>
+      <button type="button" class="btn" id="reset">${esc(t("reset"))}</button>
+      <input type="file" id="fixture-file" class="hidden-file" accept="application/json,.json" />
+      ${view.cases ? `<label>${esc(t("pickCase"))}
+        <select id="case-pick">${view.cases.map((c) => `<option value="${esc(c.case_id)}" ${c.case_id === view.caseId ? "selected" : ""}>${esc(c.case_id)}</option>`).join("")}</select>
+      </label>` : ""}
+    </div>
     ${top ? `<p>${esc(top.name)} · ${top.overdueWeeks} ${esc(t("weeksBehind"))} · ${taka(top.overduePaisa)}
       <button class="btn" data-open="${esc(top.id)}">${esc(t("passbook"))}</button></p>` : ""}
   `;
@@ -743,6 +752,7 @@ function bind() {
     view.sheetDate = e.target.value; render();
   });
   document.getElementById("load-official")?.addEventListener("click", () => loadFixtures());
+  document.getElementById("load-local")?.addEventListener("click", () => loadFixtures(true));
   document.getElementById("upload-json")?.addEventListener("click", () => document.getElementById("fixture-file")?.click());
   document.getElementById("fixture-file")?.addEventListener("change", (e) => {
     const file = e.target.files?.[0];
@@ -880,20 +890,22 @@ async function doPost() {
   }
 }
 
-function applyCase(c) {
-  state.asOf = c.today;
-  state.borrowers = structuredClone(c.borrowers);
-  state.group = null;
-  view.caseId = c.case_id;
-  view.session = [];
-  view.memberId = null;
-  view.amountStr = "";
-  view.receipt = null;
-  view.sheetDate = c.today;
-  view.formError = null;
-  view.page = "meeting";
-  save();
-  render();
+async function applyCase(c) {
+  try {
+    const out = await api("/load-case", { method: "POST", body: c });
+    applyBook(out);
+    view.caseId = out.caseId || c.case_id;
+    view.session = [];
+    view.memberId = null;
+    view.amountStr = "";
+    view.receipt = null;
+    view.sheetDate = c.today;
+    view.formError = null;
+    view.page = "meeting";
+    render();
+  } catch {
+    toast(t("serverDown"));
+  }
 }
 
 async function loadFixtures(preferLocal = false) {
@@ -907,7 +919,7 @@ async function loadFixtures(preferLocal = false) {
       const parsed = parseFixturePayload(data);
       if (!parsed.ok) continue;
       view.cases = parsed.cases;
-      applyCase(parsed.cases[0]);
+      await applyCase(parsed.cases[0]);
       toast(t("loadOk") + " " + parsed.cases[0].case_id);
       return;
     } catch {}
@@ -1031,14 +1043,17 @@ function printClosing() {
 }
 
 async function playDemo() {
-  state.asOf = CASE_TODAY;
-  state.group = "Shapla";
+  try {
+    applyBook(await api("/state", { method: "PATCH", body: { asOf: CASE_TODAY, group: "Shapla" } }));
+  } catch {
+    state.asOf = CASE_TODAY;
+    state.group = "Shapla";
+  }
   view.page = "meeting";
   view.memberId = "B13";
   view.amountStr = "";
   view.receipt = null;
   view.formError = null;
-  save();
   render();
   toast(t("demoStart"));
   await sleep(900);

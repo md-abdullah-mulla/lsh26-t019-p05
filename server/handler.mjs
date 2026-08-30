@@ -17,7 +17,7 @@ function send(res, status, obj, extraHeaders = {}) {
 
 function cookieHeader(token, secure) {
   const parts = [
-    `kisti_session=${token}`,
+    `kisti_session=${encodeURIComponent(token)}`,
     "Path=/",
     "HttpOnly",
     "SameSite=Lax",

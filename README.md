@@ -4,56 +4,41 @@
 - **Problem ID:** P05
 - **Event start code:** LSH26-8490-C900 (see `EVENT.md`)
 - **Live URL:** https://kisti-khata.vercel.app
-- **Repo (private until we are told to publish):** `lsh26-t019-p05`
+- **Repository:** https://github.com/md-abdullah-mulla/lsh26-t019-p05 (public)
 
 A village-center collection book. Payments are uneven. The ledger applies each payment to the **oldest unpaid weekly instalment first** and carries extra forward. Outstanding is true at borrower level and at group level.
 
 ## Setup and run
 
-Node backend (no extra npm packages). Login, payments and the book are stored on the server (`data/book.json` locally, `/tmp` on Vercel).
+Node backend, no extra npm packages. Login, the book and payments live on the server (`data/book.json` locally, `/tmp/kisti-book.json` on Vercel).
 
 ```bash
 npm start
 # http://127.0.0.1:8080
 ```
 
-API: `POST /api/login`, `GET /api/state`, `POST /api/pay`, `DELETE /api/pay`, `POST /api/borrowers`, `POST /api/reset`, `POST /api/logout`.
-
-The first screen is the **center login**. Sample officer access (shown on the page):
+First screen is **center login**:
 
 - Name: any (e.g. `Mina`)
 - PIN: `2026`
 
 ```bash
-# from this directory
-python3 -m http.server 8080 --bind 0.0.0.0
-# open http://127.0.0.1:8080
-```
-
-Or:
-
-```bash
-npm start
-```
-
-## Tests (proof)
-
-```bash
 npm test
 ```
 
-Expected: thousands of assertions, **0 failed**, including all 25 public cases.
+Expected: tens of thousands of assertions, **0 failed**, plus `server tests passed`.
 
-Public sample file (same shape judges use): `data/P05_micro_loans_public.json`  
-Case format note is inside that file. Week `k` is due on `first_due + 7 × (k − 1)`. Money is taka strings; the engine uses integer paisa.
+API: `POST /api/login`, `GET /api/state`, `PATCH /api/state`, `POST /api/pay`, `DELETE /api/pay`, `POST /api/borrowers`, `POST /api/reset`, `POST /api/load-case`, `POST /api/logout`, `GET /api/health`.
 
 ## How sample data gets in (not hardcoded-only)
 
-1. **Seeded on start** — PUB-01 (18 borrowers) so a judge can click immediately.
-2. **File** — open any JSON in the official case shape (`{ "today", "borrowers": [...] }` or `{ "cases": [...] }`).
-3. **Sample cases** — tries the official fixture API `https://live.hackathon.lofistack.com/api/fixtures/P05?teamId=LSH26-T019`, then the bundled pack file if the API is blocked.
+1. **Seeded on start** — PUB-01 (18 borrowers) so a judge can click immediately after login.
+2. **About page → File** — open any JSON in the official case shape (`{ "today", "borrowers": [...] }` or `{ "cases": [...] }`).
+3. **About page → official / pack sample** — tries `https://live.hackathon.lofistack.com/api/fixtures/P05?teamId=LSH26-T019`, then the bundled pack `data/P05_micro_loans_public.json`.
 
-After a load, pick PUB-01 … PUB-25 from the case list.
+After a load, pick PUB-01 … PUB-25 from the case list on About. Sample / File / Reset are **not** on the meeting toolbar.
+
+Public sample file: `data/P05_micro_loans_public.json`. Week `k` is due on `first_due + 7 × (k − 1)`. Money is taka strings; the engine uses integer paisa.
 
 ## Four required items
 
@@ -78,6 +63,7 @@ Top overdue by amount: B16. Top by weeks behind: B13 (7 weeks).
 - **Remove a payment** and the book recomputes; the log remains.
 - **Collection sheet** for a chosen date: prior arrears + remaining kisti due that day, print and CSV.
 - **Meeting close**: cash taken this sitting vs who is still behind.
+- Officer login (PIN) and a Node API so the book is not only in the browser.
 
 ## Keyboard
 
@@ -86,7 +72,6 @@ Top overdue by amount: B16. Top by weeks behind: B13 (7 weeks).
 | Enter | Post (amount field or after a receipt → next member) |
 | N | Next overdue member |
 | Esc | Close receipt / dialog |
-| D | Demo (when not typing) |
 
 Amount errors show **on the page** in red, not as `alert()`.
 
@@ -98,18 +83,19 @@ Amount errors show **on the page** in red, not as `alert()`.
 - **Due today is not overdue.** Overdue money and overdue weeks count only `due < today`.
 - **FIFO with no holes.** Extra never skips an unpaid week.
 - **Bangla first**, English one click away. Same keys, no mixed chrome.
-- Static hosting so the live URL is the app.
+- **Server book + signed cookie session.** The UI is a client; posting goes through `/api/pay`.
 
 ## Known limitations
 
-- Single-device `localStorage`. No multi-officer sync.
-- Live fixture API may fail in the browser (CORS). Bundled pack + file upload still load the official cases.
+- Persistence is a JSON file, not SQL. Local `data/book.json` is durable. On Vercel the file is `/tmp`, so a cold isolate may start from seed again. Login itself is a signed cookie, so a new isolate does not kick the officer out.
+- Official live fixture API may fail in the browser (CORS). Bundled pack + file upload still load the official cases.
 - Reversing a payment is delete-and-replay, not a signed correction slip.
 - Collection-sheet “this week” is the instalment whose due date equals the chosen date.
+- One shared book per deployment, not multi-officer merge.
 
 ## Approach and contributions
 
-Approach: treat the register as a waterfall over a fixed week grid, then hang a meeting UI and a collection sheet on that engine.
+Approach: treat the register as a waterfall over a fixed week grid, then hang a meeting UI and a collection sheet on that engine, then put login and writes on a small Node API.
 
 Registered members: team **LSH26-T019** (names as on the arena). This repository is P05 only.
 

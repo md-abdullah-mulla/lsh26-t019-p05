@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { SEED } from "../js/seed.js";
@@ -14,6 +14,32 @@ import {
 
 const SESSION_MS = 12 * 60 * 60 * 1000;
 const TODAY = "2026-08-30";
+const COOKIE_KEY = process.env.KISTI_COOKIE_KEY || "kisti-khata-lsh26-t019-hmac";
+
+function signOfficer(officer) {
+  const payload = Buffer.from(JSON.stringify({ o: officer, e: Date.now() + SESSION_MS })).toString("base64url");
+  const sig = createHmac("sha256", COOKIE_KEY).update(payload).digest("base64url");
+  return `${payload}.${sig}`;
+}
+
+function verifyOfficer(token) {
+  if (!token || !token.includes(".")) return null;
+  const i = token.lastIndexOf(".");
+  const payload = token.slice(0, i);
+  const sig = token.slice(i + 1);
+  if (!payload || !sig) return null;
+  const expect = createHmac("sha256", COOKIE_KEY).update(payload).digest("base64url");
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expect);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+  try {
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    if (!data?.o || data.e < Date.now()) return null;
+    return String(data.o);
+  } catch {
+    return null;
+  }
+}
 
 function freshBook() {
   return {
@@ -67,8 +93,8 @@ export function createStore(persistPath) {
 
   function tokenOf(req) {
     const cookie = String(req.headers?.cookie || "");
-    const m = cookie.match(/(?:^|;\s*)kisti_session=([A-Za-z0-9]+)/);
-    if (m) return m[1];
+    const m = cookie.match(/(?:^|;\s*)kisti_session=([^;]+)/);
+    if (m) return decodeURIComponent(m[1].trim());
     const auth = String(req.headers?.authorization || "");
     if (auth.startsWith("Bearer ")) return auth.slice(7).trim();
     return "";
@@ -76,6 +102,8 @@ export function createStore(persistPath) {
 
   function sessionOfficer(token) {
     if (!token) return null;
+    const signed = verifyOfficer(token);
+    if (signed) return signed;
     const s = db.sessions[token];
     if (!s || s.exp < Date.now()) {
       if (s) delete db.sessions[token];
@@ -103,7 +131,7 @@ export function createStore(persistPath) {
       err.status = 400;
       throw err;
     }
-    const token = randomBytes(24).toString("hex");
+    const token = signOfficer(v.officer);
     db.sessions[token] = { officer: v.officer, exp: Date.now() + SESSION_MS };
     persist();
     return { token, state: publicState(v.officer) };

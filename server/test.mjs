@@ -43,6 +43,9 @@ eq(after, before + 37550, "pay persisted");
 const reset = store.reset(req(token));
 eq(snapshot(reset.borrowers.find((b) => b.id === "B01"), "2026-08-30").collectedPaisa, before, "reset");
 
+const isolate = createStore(join(dir, "other.json"));
+eq(isolate.getState(req(token)).officer, "Mina", "signed cookie works on a fresh isolate");
+
 if (failed) {
   console.log(`server tests failed: ${failed}`);
   process.exit(1);
