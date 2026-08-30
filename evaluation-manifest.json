@@ -7,7 +7,7 @@
       "problem_id": "P05",
       "repository_url": "https://github.com/md-abdullah-mulla/lsh26-t019-p05",
       "live_url": "https://kisti-khata.vercel.app",
-      "commit_sha": "951b8fb680a8f46c66e20ca879b4a42d6a6d1799",
+      "commit_sha": "8ecbc5037155bab18bbba0349e378e470c203f04",
       "loads_sample_data": "yes: seeded on start with PUB-01; About page File loads a case JSON; About page official/pack sample fetches the official pack (live API, then bundled data/P05_micro_loans_public.json). Case picker after load. Not hardcoded-only. Sample/File/Reset are not on the meeting toolbar.",
       "requirements": {
         "R1": {
