@@ -65,11 +65,28 @@ function taka(p) { return "৳" + formatTaka(p); }
 function fd(iso) { return formatDate(iso, state.lang); }
 function fds(iso) { return formatDateShort(iso, state.lang); }
 function find(id) { return state.borrowers.find((b) => b.id === id); }
-function save() {
-  localStorage.setItem(STORE, JSON.stringify({
-    asOf: state.asOf, borrowers: state.borrowers, group: state.group, lang: state.lang, officer: state.officer || null,
-  }));
+function applyBook(data) {
+  if (!data) return;
+  state.officer = data.officer || null;
+  state.asOf = data.asOf || state.asOf;
+  state.group = data.group === undefined ? state.group : data.group;
+  if (data.lang === "bn" || data.lang === "en") state.lang = data.lang;
+  if (Array.isArray(data.borrowers)) state.borrowers = data.borrowers;
+  saveLang();
 }
+function saveLang() {
+  try { localStorage.setItem("kisti-lang", state.lang); } catch {}
+}
+async function pullState() {
+  try {
+    applyBook(await api("/state"));
+    return true;
+  } catch (e) {
+    if (e && e.code === "unauthorized") state.officer = null;
+    return false;
+  }
+}
+function save() { saveLang(); }
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -830,7 +847,7 @@ function bind() {
   });
 }
 
-function doPost() {
+async function doPost() {
   const b = find(view.memberId);
   if (!b) return;
   const date = document.getElementById("pay-date")?.value || view.payDate || state.asOf;
@@ -843,22 +860,22 @@ function doPost() {
       return;
     }
     const lines = allocationLines(b, state.asOf, date, paisa);
-    const posted = postToBorrower(b, date, view.amountStr);
-    save();
-    view.session.push({ id: b.id, name: b.name, paisa: posted.paisa });
+    const out = await api("/pay", { method: "POST", body: { id: b.id, date, amount: view.amountStr } });
+    applyBook(out);
+    view.session.push({ id: b.id, name: b.name, paisa: out.posted.paisa });
     view.amountStr = "";
     view.formError = null;
     view.receipt = {
       id: b.id,
       name: b.name,
       date,
-      paisa: posted.paisa,
+      paisa: out.posted.paisa,
       lines: lines.text,
       overdueAfter: lines.overdueAfter,
     };
     render();
   } catch (e) {
-    showPayError(e.code === "bad_date" ? t("alertDate") : t("alertAmount"));
+    showPayError(e.code === "bad_date" ? t("alertDate") : e.code === "unauthorized" ? t("serverDown") : t("alertAmount"));
     document.getElementById("pay-amt")?.focus();
   }
 }
@@ -1068,6 +1085,7 @@ window.addEventListener("keydown", (e) => {
 export const __test = { I18N, t, stateRef: () => state };
 
 (async function boot() {
+  render();
   await pullState();
   render();
 })();

@@ -1,10 +1,22 @@
 export async function api(path, { method = "GET", body } = {}) {
-  const r = await fetch("/api" + path, {
-    method,
-    credentials: "include",
-    headers: body !== undefined ? { "content-type": "application/json" } : {},
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
+  let r;
+  try {
+    r = await fetch("/api" + path, {
+      method,
+      credentials: "include",
+      signal: ctrl.signal,
+      headers: body !== undefined ? { "content-type": "application/json" } : {},
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    clearTimeout(timer);
+    const err = new Error("serverDown");
+    err.code = "serverDown";
+    throw err;
+  }
+  clearTimeout(timer);
   let data = {};
   try { data = await r.json(); } catch {}
   if (r.status === 401) {
