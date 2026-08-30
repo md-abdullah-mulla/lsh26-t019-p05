@@ -5,16 +5,12 @@ import { I18N, GROUPS, STATUS_KEY, t as tr, groupName } from "./i18n.js";
 import {
   whatIf,
   parseAmountToPaisa,
-  postToBorrower,
-  removePayment,
   validateNewBorrower,
-  makeId,
   allocationLines,
   pickDefaultMember,
   nextOverdue,
   parseFixturePayload,
   meetingClose,
-  checkOfficerLogin,
 } from "./actions.js";
 import { api, setAuthToken } from "./api.js";
 
@@ -645,6 +641,8 @@ function paintLive() {
   const html = barsHtml(b, paisa);
   const wb = document.getElementById("weekbars");
   if (wb) wb.innerHTML = html;
+  const side = document.getElementById("weekbars-side");
+  if (side) side.innerHTML = html;
 }
 
 function goNextMember() {

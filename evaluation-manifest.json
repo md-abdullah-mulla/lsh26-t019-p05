@@ -7,8 +7,8 @@
       "problem_id": "P05",
       "repository_url": "https://github.com/md-abdullah-mulla/lsh26-t019-p05",
       "live_url": "https://kisti-khata.vercel.app",
-      "commit_sha": "8ecbc5037155bab18bbba0349e378e470c203f04",
-      "loads_sample_data": "yes: seeded on start with PUB-01; About page File loads a case JSON; About page official/pack sample fetches the official pack (live API, then bundled data/P05_micro_loans_public.json). Case picker after load. Not hardcoded-only. Sample/File/Reset are not on the meeting toolbar.",
+      "commit_sha": "03d3b6f80416f6dfa7a7b61a8456629230202c7f",
+      "loads_sample_data": "yes: seeded on start with PUB-01; About page File loads a case JSON; About page official/pack sample fetches the official pack (live API, then bundled data/P05_micro_loans_public.json). Case picker after load. Not hardcoded-only. Sample/File/Reset/Demo are not on the meeting toolbar.",
       "requirements": {
         "R1": {
           "status": "complete",
@@ -28,10 +28,12 @@
         }
       },
       "known_limitations": [
-        "No multi-user sync; book is localStorage on the device.",
-        "Official live fixture API has no CORS for the Vercel origin; the app falls back to bundled pack JSON and file upload.",
+        "JSON file store (local data/book.json; Vercel /tmp). A new serverless isolate may show the seed book again. Login is a signed cookie plus a bearer token so the officer is not kicked out.",
+        "Official live fixture API has no CORS for the Vercel origin; the app falls back to bundled pack JSON and file upload on the About page.",
         "Payment correction is remove + recompute (log kept). Not a separate audit appendix.",
-        "Collection sheet matches 'this week' by calendar due date; other weekdays still show prior arrears."
+        "Collection sheet matches 'this week' by calendar due date; other weekdays still show prior arrears.",
+        "Meeting-session cash is this browser sitting only; a refresh clears that tally. Posted payments remain on the server.",
+        "Login PIN is not printed on the login page."
       ]
     },
     {

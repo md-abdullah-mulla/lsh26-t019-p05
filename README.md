@@ -19,14 +19,14 @@ npm start
 
 First screen is **center login**:
 
-- Name: any (e.g. `Mina`)
-- PIN: `2026`
+- Name: any officer name (e.g. `Mina`)
+- PIN: `2026` (typed in; **not printed on the login page**)
 
 ```bash
 npm test
 ```
 
-Expected: tens of thousands of assertions, **0 failed**, plus `server tests passed`.
+Expected: **58107+ passed, 0 failed, 39 test cases**, plus `server tests passed`.
 
 API: `POST /api/login`, `GET /api/state`, `PATCH /api/state`, `POST /api/pay`, `DELETE /api/pay`, `POST /api/borrowers`, `POST /api/reset`, `POST /api/load-case`, `POST /api/logout`, `GET /api/health`.
 
@@ -36,7 +36,7 @@ API: `POST /api/login`, `GET /api/state`, `PATCH /api/state`, `POST /api/pay`, `
 2. **About page → File** — open any JSON in the official case shape (`{ "today", "borrowers": [...] }` or `{ "cases": [...] }`).
 3. **About page → official / pack sample** — tries `https://live.hackathon.lofistack.com/api/fixtures/P05?teamId=LSH26-T019`, then the bundled pack `data/P05_micro_loans_public.json`.
 
-After a load, pick PUB-01 … PUB-25 from the case list on About. Sample / File / Reset are **not** on the meeting toolbar.
+After a load, pick PUB-01 … PUB-25 from the case list on About. Sample / File / Reset / Demo are **not** on the meeting toolbar.
 
 Public sample file: `data/P05_micro_loans_public.json`. Week `k` is due on `first_due + 7 × (k − 1)`. Money is taka strings; the engine uses integer paisa.
 
@@ -63,7 +63,8 @@ Top overdue by amount: B16. Top by weeks behind: B13 (7 weeks).
 - **Remove a payment** and the book recomputes; the log remains.
 - **Collection sheet** for a chosen date: prior arrears + remaining kisti due that day, print and CSV.
 - **Meeting close**: cash taken this sitting vs who is still behind.
-- Officer login (PIN) and a Node API so the book is not only in the browser.
+- Officer login and a Node API so the book is not only in the browser.
+- Bangla / English, phone and tablet layout.
 
 ## Keyboard
 
@@ -73,7 +74,7 @@ Top overdue by amount: B16. Top by weeks behind: B13 (7 weeks).
 | N | Next overdue member |
 | Esc | Close receipt / dialog |
 
-Amount errors show **on the page** in red, not as `alert()`.
+`D` does nothing (no demo post). Amount errors show **on the page** in red, not as `alert()`.
 
 ## Major decisions
 
@@ -83,15 +84,17 @@ Amount errors show **on the page** in red, not as `alert()`.
 - **Due today is not overdue.** Overdue money and overdue weeks count only `due < today`.
 - **FIFO with no holes.** Extra never skips an unpaid week.
 - **Bangla first**, English one click away. Same keys, no mixed chrome.
-- **Server book + signed cookie session.** The UI is a client; posting goes through `/api/pay`.
+- **Server book + signed cookie + bearer token.** Posting goes through `/api/pay`. The PIN is not shown on the login screen.
+- **Responsive CSS** (phone / tablet / desktop). No UI kit.
 
 ## Known limitations
 
-- Persistence is a JSON file, not SQL. Local `data/book.json` is durable. On Vercel the file is `/tmp`, so a cold isolate may start from seed again. Login itself is a signed cookie, so a new isolate does not kick the officer out.
-- Official live fixture API may fail in the browser (CORS). Bundled pack + file upload still load the official cases.
+- Persistence is a JSON file, not SQL. Local `data/book.json` is durable. On Vercel the file is `/tmp`, so a cold isolate may start from seed again. Login uses a signed cookie plus a session token, so a new isolate does not kick the officer out.
+- Official live fixture API may fail in the browser (CORS). Bundled pack + file upload on About still load the official cases.
 - Reversing a payment is delete-and-replay, not a signed correction slip.
 - Collection-sheet “this week” is the instalment whose due date equals the chosen date.
 - One shared book per deployment, not multi-officer merge.
+- “Cash this meeting” is the current browser sitting; a refresh clears that tally (posted payments remain on the server).
 
 ## Approach and contributions
 
