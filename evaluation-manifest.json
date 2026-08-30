@@ -1,0 +1,52 @@
+{
+  "release_version": "2.1",
+  "team_id": "LSH26-T019",
+  "form_receipt_time": "set by the organizer from the Google Form",
+  "problems": [
+    {
+      "problem_id": "P05",
+      "repository_url": "",
+      "live_url": "https://kisti-khata.vercel.app",
+      "commit_sha": "",
+      "loads_sample_data": "yes: seeded on start with PUB-01; File button loads a case JSON; Sample cases fetches the official pack (live API, then bundled data/P05_micro_loans_public.json). Case picker after load. Not hardcoded-only.",
+      "requirements": {
+        "R1": {
+          "status": "complete",
+          "evidence": "PUB-01 seed has 18 borrowers (≥15). Each has loan_bdt, interest_bdt, plan_weeks, instalment_bdt, first_due, and a different point in the cycle (paidWeeks/overdueWeeks mix). npm test TC-S01 TC-S02 TC-L05."
+        },
+        "R2": {
+          "status": "complete",
+          "evidence": "Center meeting posts any amount on any date, including part (375.50) and overpay. Cash pad + typed input. TC-A01 TC-A02 TC-A09 TC-A10."
+        },
+        "R3": {
+          "status": "complete",
+          "evidence": "Allocation is oldest unpaid week first; leftover carries forward. Passbook marks paid / part / overdue / due / upcoming per week. TC-L01–L10, TC-A05."
+        },
+        "R4": {
+          "status": "complete",
+          "evidence": "Branch book: given out, collected, overdue; lists most overdue by amount and by weeks behind. PUB-01: given 14423500 paisa, collected 7563025, overdue 1847775. TC-L05."
+        }
+      },
+      "known_limitations": [
+        "No multi-user sync; book is localStorage on the device.",
+        "Official live fixture API has no CORS for the Vercel origin; the app falls back to bundled pack JSON and file upload.",
+        "Payment correction is remove + recompute (log kept). Not a separate audit appendix.",
+        "Collection sheet matches 'this week' by calendar due date; other weekdays still show prior arrears."
+      ]
+    },
+    {
+      "problem_id": "P08",
+      "repository_url": "",
+      "live_url": "",
+      "commit_sha": "",
+      "loads_sample_data": "not in this repository",
+      "requirements": {
+        "R1": { "status": "not_attempted", "evidence": "Separate repository; not combined with P05." },
+        "R2": { "status": "not_attempted", "evidence": "" },
+        "R3": { "status": "not_attempted", "evidence": "" },
+        "R4": { "status": "not_attempted", "evidence": "" }
+      },
+      "known_limitations": []
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+# কিস্তি খাতা — Micro-Loan Repayment Ledger (P05)
+
+- **Team ID:** LSH26-T019
+- **Problem ID:** P05
+- **Event start code:** LSH26-8490-C900 (see `EVENT.md`)
+- **Live URL:** https://kisti-khata.vercel.app
+- **Repo (private until we are told to publish):** `lsh26-t019-p05`
+
+A village-center collection book. Payments are uneven. The ledger applies each payment to the **oldest unpaid weekly instalment first** and carries extra forward. Outstanding is true at borrower level and at group level.
+
+## Setup and run
+
+No build step. No backend.
+
+```bash
+# from this directory
+python3 -m http.server 8080 --bind 0.0.0.0
+# open http://127.0.0.1:8080
+```
+
+Or:
+
+```bash
+npm start
+```
+
+## Tests (proof)
+
+```bash
+npm test
+```
+
+Expected: thousands of assertions, **0 failed**, including all 25 public cases.
+
+Public sample file (same shape judges use): `data/P05_micro_loans_public.json`  
+Case format note is inside that file. Week `k` is due on `first_due + 7 × (k − 1)`. Money is taka strings; the engine uses integer paisa.
+
+## How sample data gets in (not hardcoded-only)
+
+1. **Seeded on start** — PUB-01 (18 borrowers) so a judge can click immediately.
+2. **File** — open any JSON in the official case shape (`{ "today", "borrowers": [...] }` or `{ "cases": [...] }`).
+3. **Sample cases** — tries the official fixture API `https://live.hackathon.lofistack.com/api/fixtures/P05?teamId=LSH26-T019`, then the bundled pack file if the API is blocked.
+
+After a load, pick PUB-01 … PUB-25 from the case list.
+
+## Four required items
+
+| # | Requirement | Where it is |
+|---|---|---|
+| 1 | ≥ 15 borrowers, each with loan, interest, weekly plan, different cycle point | Seed + any public case. Members table and center queue. |
+| 2 | Record a payment of any amount on any date (part and over) | Center meeting: type or cash pad → **জমা করুন / Post payment**. Enter key posts. |
+| 3 | Oldest unpaid week first; week-by-week paid / part / overdue | Passbook + week strip. Preview shows `W1 +… → W2 +…`. |
+| 4 | Group dashboard: given out, collected, overdue; most overdue by amount and by weeks | **শাখার খাতা / Branch book**. |
+
+PUB-01 as of 2026-08-23 (integer paisa):
+
+| Given out | Collected | Overdue |
+|---|---|---|
+| 14,423,500 | 7,563,025 | 1,847,775 |
+
+Top overdue by amount: B16. Top by weeks behind: B13 (7 weeks).
+
+## Bonus
+
+- **Likely finish date** from how the borrower actually pays, not the original last due.
+- **Remove a payment** and the book recomputes; the log remains.
+- **Collection sheet** for a chosen date: prior arrears + remaining kisti due that day, print and CSV.
+- **Meeting close**: cash taken this sitting vs who is still behind.
+
+## Keyboard
+
+| Key | Action |
+|---|---|
+| Enter | Post (amount field or after a receipt → next member) |
+| N | Next overdue member |
+| Esc | Close receipt / dialog |
+| D | Demo (when not typing) |
+
+Amount errors show **on the page** in red, not as `alert()`.
+
+## Major decisions
+
+- **Integer paisa only.** No floats in the ledger.
+- **Payments are the source of truth.** Week status is always derived for the as-of date.
+- **As-of is an input**, never wall-clock. A payment after as-of is stored but not applied.
+- **Due today is not overdue.** Overdue money and overdue weeks count only `due < today`.
+- **FIFO with no holes.** Extra never skips an unpaid week.
+- **Bangla first**, English one click away. Same keys, no mixed chrome.
+- Static hosting so the live URL is the app.
+
+## Known limitations
+
+- Single-device `localStorage`. No multi-officer sync.
+- Live fixture API may fail in the browser (CORS). Bundled pack + file upload still load the official cases.
+- Reversing a payment is delete-and-replay, not a signed correction slip.
+- Collection-sheet “this week” is the instalment whose due date equals the chosen date.
+
+## Approach and contributions
+
+Approach: treat the register as a waterfall over a fixed week grid, then hang a meeting UI and a collection sheet on that engine.
+
+Registered members: team **LSH26-T019** (names as on the arena). This repository is P05 only.
+
+## AI disclosure
+
+Arena.ai Agent Mode was used to write, test and document the software, directed by the team. Disclosed as required.
+
+## Licences
+
+See `LICENSES.md`. No UI kit. Sample data from LofiStack Participant Release v2.1.
