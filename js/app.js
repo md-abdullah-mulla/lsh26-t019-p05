@@ -184,16 +184,6 @@ function render() {
         return `<button data-group="${x}" class="${state.group === x ? "on" : ""}"><i class="dot ${x}"></i>${esc(g(x))} (${n})</button>`;
       }).join("")}
       <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        ${view.cases?.length ? `<label class="kbd">${esc(t("pickCase"))}
-          <select id="case-pick">${view.cases.map((c) =>
-            `<option value="${esc(c.case_id)}" ${c.case_id === view.caseId ? "selected" : ""}>${esc(c.case_id)} · ${c.borrowers.length}</option>`
-          ).join("")}</select>
-        </label>` : ""}
-        <button type="button" id="load-official">${esc(t("loadSample"))}</button>
-        <button type="button" id="upload-json">${esc(t("fileBtn"))}</button>
-        <input type="file" id="fixture-file" class="hidden-file" accept="application/json,.json" />
-        <button type="button" id="demo" title="${esc(t("demoBtnHelp"))}">${esc(t("demo"))}</button>
-        <button type="button" id="reset">${esc(t("reset"))}</button>
         <button type="button" id="new-b">${esc(t("newMember"))}</button>
       </span>
     </div>
@@ -989,6 +979,67 @@ function printClosing() {
     <h1>${esc(t("closingTitle"))}</h1>
     <p class="muted">${esc(t("place"))} · ${fd(state.asOf)}</p>
     <div class="sum"><span>${esc(t("sessionCash"))} ${taka(c.taken)}</span><span>${esc(t("leftOverdue"))} ${taka(d.overdue)}</span></div>
+    <h2>${esc(t("whoPaid"))}</h2>
+    <table><tbody>${paid || `<tr><td>${esc(t("noSession"))}</td></tr>`}</tbody></table>
+    <h2>${esc(t("whoLeft"))}</h2>
+    <table><tbody>${still || `<tr><td>${esc(t("noneOverdue"))}</td></tr>`}</tbody></table>`);
+}
+
+async function playDemo() {
+  state.asOf = CASE_TODAY;
+  state.group = "Shapla";
+  view.page = "meeting";
+  view.memberId = "B13";
+  view.amountStr = "";
+  view.receipt = null;
+  view.formError = null;
+  save();
+  render();
+  toast(t("demoStart"));
+  await sleep(900);
+  const b = find("B13");
+  if (!b) return;
+  const s = snapshot(b, state.asOf);
+  view.amountStr = fromPaisa(s.overduePaisa);
+  view.payDate = state.asOf;
+  paintLive();
+  const amt = document.getElementById("pay-amt");
+  if (amt) amt.value = view.amountStr;
+  toast(t("demoFill"));
+  await sleep(1400);
+  doPost();
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (view.receipt || view.modal) {
+      view.receipt = null;
+      view.modal = null;
+      render();
+    }
+    return;
+  }
+  if (view.receipt && (e.key === "Enter" || e.key === "n" || e.key === "N")) {
+    e.preventDefault();
+    goNextMember();
+    return;
+  }
+  if (e.target.matches?.("input, textarea, select")) return;
+  if (e.key === "d" || e.key === "D") playDemo();
+  if (e.key === "n" || e.key === "N") {
+    e.preventDefault();
+    goNextMember();
+  }
+  if (e.key === "Enter" && (view.page === "meeting" || view.page === "member")) {
+    e.preventDefault();
+    doPost();
+  }
+});
+
+export const __test = { I18N, t, stateRef: () => state };
+
+render();
+e"))} ${taka(d.overdue)}</span></div>
     <h2>${esc(t("whoPaid"))}</h2>
     <table><tbody>${paid || `<tr><td>${esc(t("noSession"))}</td></tr>`}</tbody></table>
     <h2>${esc(t("whoLeft"))}</h2>
