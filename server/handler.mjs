@@ -20,7 +20,7 @@ function cookieHeader(token, secure) {
     `kisti_session=${encodeURIComponent(token)}`,
     "Path=/",
     "HttpOnly",
-    "SameSite=Lax",
+    secure ? "SameSite=None" : "SameSite=Lax",
     "Max-Age=43200",
   ];
   if (secure) parts.push("Secure");
@@ -79,7 +79,7 @@ export function createHandler(persistPath) {
       if (method === "POST" && path === "/login") {
         const body = await readBody(req);
         const out = store.login(body.name, body.pin);
-        send(res, 200, out.state, { "set-cookie": cookieHeader(out.token, secure) });
+        send(res, 200, { ...out.state, token: out.token }, { "set-cookie": cookieHeader(out.token, secure) });
         return;
       }
 

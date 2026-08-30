@@ -16,7 +16,7 @@ import {
   meetingClose,
   checkOfficerLogin,
 } from "./actions.js";
-import { api } from "./api.js";
+import { api, setAuthToken } from "./api.js";
 
 selfTest();
 
@@ -725,6 +725,7 @@ function bind() {
   });
   document.getElementById("logout")?.addEventListener("click", async () => {
     try { await api("/logout", { method: "POST", body: {} }); } catch {}
+    setAuthToken("");
     state.officer = null;
     state.borrowers = [];
     render();
@@ -885,7 +886,12 @@ async function doPost() {
     };
     render();
   } catch (e) {
-    showPayError(e.code === "bad_date" ? t("alertDate") : e.code === "unauthorized" ? t("serverDown") : t("alertAmount"));
+    showPayError(
+      e.code === "bad_date" ? t("alertDate")
+        : e.code === "unauthorized" ? t("sessionGone")
+        : e.code === "serverDown" || e.code === "api" ? t("serverDown")
+        : t("alertAmount")
+    );
     document.getElementById("pay-amt")?.focus();
   }
 }

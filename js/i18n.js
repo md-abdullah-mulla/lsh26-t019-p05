@@ -160,6 +160,7 @@ export const I18N = {
     logout: "বের হোন",
     loggedInAs: "কর্মী",
     serverDown: "সার্ভার চলছে না। খাতা খোলা যাচ্ছে না।",
+    sessionGone: "সেশন মেয়াদ শেষ বা কুকি যায়নি। আবার খাতা খুলুন।",
   },
   en: {
     brand: "Kisti Khata",
@@ -315,6 +316,7 @@ export const I18N = {
     logout: "Log out",
     loggedInAs: "Officer",
     serverDown: "The server is not running. The book cannot open.",
+    sessionGone: "Session expired or the login cookie was blocked. Open the book again.",
   },
 };
 

@@ -1,13 +1,30 @@
+const TOKEN_KEY = "kisti-session";
+
+export function setAuthToken(token) {
+  try {
+    if (token) sessionStorage.setItem(TOKEN_KEY, token);
+    else sessionStorage.removeItem(TOKEN_KEY);
+  } catch {}
+}
+
+function authToken() {
+  try { return sessionStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; }
+}
+
 export async function api(path, { method = "GET", body } = {}) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 8000);
+  const timer = setTimeout(() => ctrl.abort(), 20000);
+  const headers = {};
+  if (body !== undefined) headers["content-type"] = "application/json";
+  const tok = authToken();
+  if (tok) headers.authorization = "Bearer " + tok;
   let r;
   try {
     r = await fetch("/api" + path, {
       method,
       credentials: "include",
       signal: ctrl.signal,
-      headers: body !== undefined ? { "content-type": "application/json" } : {},
+      headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
@@ -31,6 +48,7 @@ export async function api(path, { method = "GET", body } = {}) {
     err.status = r.status;
     throw err;
   }
+  if (data && data.token) setAuthToken(data.token);
   return data;
 }
 
