@@ -133,7 +133,6 @@ function loginHtml() {
         <label>${esc(t("loginPin"))}</label>
         <input id="login-pin" name="pin" type="password" inputmode="numeric" autocomplete="current-password" required />
         <div class="errbox" id="login-err" hidden></div>
-        <p class="help">${esc(t("loginHelp"))}</p>
         <button class="btn primary" type="submit">${esc(t("loginGo"))}</button>
       </form>
     </div>
