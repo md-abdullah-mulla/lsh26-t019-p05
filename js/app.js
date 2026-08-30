@@ -1011,67 +1011,7 @@ async function playDemo() {
 }
 
 window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    if (view.receipt || view.modal) {
-      view.receipt = null;
-      view.modal = null;
-      render();
-    }
-    return;
-  }
-  if (view.receipt && (e.key === "Enter" || e.key === "n" || e.key === "N")) {
-    e.preventDefault();
-    goNextMember();
-    return;
-  }
-  if (e.target.matches?.("input, textarea, select")) return;
-  if (e.key === "d" || e.key === "D") playDemo();
-  if (e.key === "n" || e.key === "N") {
-    e.preventDefault();
-    goNextMember();
-  }
-  if (e.key === "Enter" && (view.page === "meeting" || view.page === "member")) {
-    e.preventDefault();
-    doPost();
-  }
-});
-
-export const __test = { I18N, t, stateRef: () => state };
-
-render();
-e"))} ${taka(d.overdue)}</span></div>
-    <h2>${esc(t("whoPaid"))}</h2>
-    <table><tbody>${paid || `<tr><td>${esc(t("noSession"))}</td></tr>`}</tbody></table>
-    <h2>${esc(t("whoLeft"))}</h2>
-    <table><tbody>${still || `<tr><td>${esc(t("noneOverdue"))}</td></tr>`}</tbody></table>`);
-}
-
-async function playDemo() {
-  state.asOf = CASE_TODAY;
-  state.group = "Shapla";
-  view.page = "meeting";
-  view.memberId = "B13";
-  view.amountStr = "";
-  view.receipt = null;
-  view.formError = null;
-  save();
-  render();
-  toast(t("demoStart"));
-  await sleep(900);
-  const b = find("B13");
-  if (!b) return;
-  const s = snapshot(b, state.asOf);
-  view.amountStr = fromPaisa(s.overduePaisa);
-  view.payDate = state.asOf;
-  paintLive();
-  const amt = document.getElementById("pay-amt");
-  if (amt) amt.value = view.amountStr;
-  toast(t("demoFill"));
-  await sleep(1400);
-  doPost();
-}
-
-window.addEventListener("keydown", (e) => {
+  if (!state.officer) return;
   if (e.key === "Escape") {
     if (view.receipt || view.modal) {
       view.receipt = null;
