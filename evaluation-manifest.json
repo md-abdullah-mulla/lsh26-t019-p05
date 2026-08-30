@@ -5,7 +5,7 @@
   "problems": [
     {
       "problem_id": "P05",
-      "repository_url": "",
+      "repository_url": "https://github.com/md-abdullah-mulla/lsh26-t019-p05",
       "live_url": "https://kisti-khata.vercel.app",
       "commit_sha": "",
       "loads_sample_data": "yes: seeded on start with PUB-01; File button loads a case JSON; Sample cases fetches the official pack (live API, then bundled data/P05_micro_loans_public.json). Case picker after load. Not hardcoded-only.",
