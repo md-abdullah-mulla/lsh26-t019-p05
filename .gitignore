@@ -1,0 +1,11 @@
+.vercel
+.DS_Store
+node_modules
+.env
+.env.*
+!.env.example
+*.pem
+*.token
+.gh-token
+.git-credentials
+
